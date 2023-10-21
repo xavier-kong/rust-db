@@ -1,1 +1,1 @@
-attempting https://cstack.github.io/db_tutorial/ in rust?
+https://cstack.github.io/db_tutorial/parts/part2.html
