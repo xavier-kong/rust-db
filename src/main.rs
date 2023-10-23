@@ -1,6 +1,7 @@
 use std::io::{self, Write};
 
-enum MetaCommandResult { MetaCommandSuccess, MetaCommandUnrecognizedCommand }
+#[allow(dead_code)]
+enum MetaCommandResult { MetaCommandSuccess, MetaCommandUnrecognizedCommand, Exit }
 
 enum  PrepareResult { PrepareSuccess, PrepareUnrecognizedStatement }
 
@@ -12,10 +13,40 @@ struct Statement {
 
 fn do_meta_command(line: &str) -> MetaCommandResult {
     if line.trim_end() == ".exit" {
-
+        return MetaCommandResult::Exit;
     } else {
         return MetaCommandResult::MetaCommandUnrecognizedCommand;
     }
+}
+
+fn prepare_statement(line: &str, statement: &mut Statement) -> PrepareResult {
+    if line.starts_with("insert") {
+        statement.statement_type = StatementType::StatementInsert;
+        return PrepareResult::PrepareSuccess;
+    }
+
+    if line.trim_end() == "select" {
+        statement.statement_type = StatementType::StatementSelect;
+        return PrepareResult::PrepareSuccess;
+    }
+
+    return PrepareResult::PrepareUnrecognizedStatement
+}
+
+fn execute_statement(statement: &mut Statement) {
+    match statement.statement_type {
+        StatementType::StatementInsert => {
+            println!("This is where we would do an insert");
+        }
+        StatementType::StatementSelect =>  {
+            println!("This is where we would do a select");
+        }
+    }
+}
+
+fn print_prompt() {
+    print!("db > ");
+    io::stdout().flush().unwrap();
 }
 
 fn main() {
@@ -30,22 +61,28 @@ fn main() {
             .expect("Error reading input");
 
         if input.chars().next().unwrap() == '.' {
-            match do_meta_command(line) {
+            match do_meta_command(&input) {
                 MetaCommandResult::MetaCommandSuccess => continue,
+                MetaCommandResult::MetaCommandUnrecognizedCommand => {
+                    println!("Unrecognized command {}", input);
+                    continue;
+                }
+                MetaCommandResult::Exit => { break; }
             }
         }
 
-        if input.trim_end() == ".exit" {
-            break;
-        } else {
-            println!("Unrecognized command {}", input);
+        let mut statement = Statement { statement_type: StatementType::StatementInsert };
+
+        match prepare_statement(&input, &mut statement) {
+            PrepareResult::PrepareSuccess => () ,
+            PrepareResult::PrepareUnrecognizedStatement => {
+                println!("Unrecognized keyword at start of {}", input);
+                continue;
+            }
         }
 
-    }
-
-    fn print_prompt() {
-        print!("db > ");
-        io::stdout().flush().unwrap();
+        execute_statement(&mut statement);
+        println!("Executed");
     }
 }
 

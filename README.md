@@ -1,1 +1,1 @@
-https://cstack.github.io/db_tutorial/parts/part2.html
+https://cstack.github.io/db_tutorial/parts/part3.html
