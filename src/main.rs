@@ -3,12 +3,26 @@ use std::io::{self, Write};
 #[allow(dead_code)]
 enum MetaCommandResult { MetaCommandSuccess, MetaCommandUnrecognizedCommand, Exit }
 
-enum  PrepareResult { PrepareSuccess, PrepareUnrecognizedStatement }
+enum  PrepareResult { PrepareSuccess, PrepareUnrecognizedStatement, PrepareSyntaxError }
 
-enum StatementType { StatementInsert, StatementSelect}
+enum StatementType { StatementInsert, StatementSelect }
 
 struct Statement {
     statement_type: StatementType
+}
+
+const COLUMN_USERNAME_SIZE: u8 = 32;
+const COLUMN_EMAIL_SIZE: u8 = 255;
+
+struct Row {
+
+}
+
+const TABLE_MAX_PAGES: usize = 100;
+
+struct Table {
+    new_rows: u32,
+    pages: [usize; TABLE_MAX_PAGES]
 }
 
 fn do_meta_command(line: &str) -> MetaCommandResult {
@@ -50,6 +64,10 @@ fn print_prompt() {
 }
 
 fn main() {
+    let table = Table {
+        new_rows: 0,
+        pages: [0; TABLE_MAX_PAGES]
+    };
 
     loop {
         print_prompt();
