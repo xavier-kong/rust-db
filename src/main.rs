@@ -7,15 +7,39 @@ enum  PrepareResult { PrepareSuccess, PrepareUnrecognizedStatement, PrepareSynta
 
 enum StatementType { StatementInsert, StatementSelect }
 
+enum ExecuteResult { ExecuteSuccess, ExecuteTableFull }
+
 struct Statement {
-    statement_type: StatementType
+    statement_type: StatementType,
+    row_to_insert: Row
+}
+
+impl Default for Statement {
+    fn default() -> Self {
+        Statement {
+            statement_type: StatementType::StatementInsert,
+            row_to_insert: Default::default()
+        }
+    }
 }
 
 const COLUMN_USERNAME_SIZE: u8 = 32;
 const COLUMN_EMAIL_SIZE: u8 = 255;
 
 struct Row {
+    id: u32,
+    username: String,
+    email: String
+}
 
+impl Default for Row {
+    fn default() -> Self {
+        Row {
+            id: 0,
+            username: "".to_string(),
+            email: "".to_string()
+        }
+    }
 }
 
 const TABLE_MAX_PAGES: usize = 100;
@@ -36,6 +60,15 @@ fn do_meta_command(line: &str) -> MetaCommandResult {
 fn prepare_statement(line: &str, statement: &mut Statement) -> PrepareResult {
     if line.starts_with("insert") {
         statement.statement_type = StatementType::StatementInsert;
+        let parsed = sscanf::sscanf!(line, "insert {} {} {}", u32, str, str);
+        match parsed {
+            Ok(v) => {
+                statement.row_to_insert.id = v.0;
+                statement.row_to_insert.username = v.1.to_string();
+                statement.row_to_insert.email = v.2.to_string();
+            },
+            Err(_) => return PrepareResult::PrepareSyntaxError
+        }
         return PrepareResult::PrepareSuccess;
     }
 
@@ -47,7 +80,7 @@ fn prepare_statement(line: &str, statement: &mut Statement) -> PrepareResult {
     return PrepareResult::PrepareUnrecognizedStatement
 }
 
-fn execute_statement(statement: &mut Statement) {
+fn execute_statement(statement: &mut Statement, table: &mut Table) -> ExecuteResult {
     match statement.statement_type {
         StatementType::StatementInsert => {
             println!("This is where we would do an insert");
@@ -89,18 +122,23 @@ fn main() {
             }
         }
 
-        let mut statement = Statement { statement_type: StatementType::StatementInsert };
+        let mut statement: Statement = Default::default();
 
         match prepare_statement(&input, &mut statement) {
             PrepareResult::PrepareSuccess => () ,
             PrepareResult::PrepareUnrecognizedStatement => {
                 println!("Unrecognized keyword at start of {}", input);
                 continue;
+            },
+            PrepareResult::PrepareSyntaxError => {
+                println!("Syntax error. Could not parse statement.");
+                continue;
             }
         }
 
-        execute_statement(&mut statement);
-        println!("Executed");
+        match execute_statement(&mut statement, table) {
+
+        }
     }
 }
 
