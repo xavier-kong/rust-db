@@ -42,10 +42,13 @@ impl Default for Row {
     }
 }
 
+const PAGE_SIZE = 4096;
 const TABLE_MAX_PAGES: usize = 100;
+const ROWS_PER_PAGE: usize = PAGE_SIZE / ROW_SIZE;
+const TABLE_MAX_ROWS: usize = ROWS_PER_PAGE * TABLE_MAX_PAGES;
 
 struct Table {
-    new_rows: u32,
+    num_rows: u32,
     pages: [usize; TABLE_MAX_PAGES]
 }
 
@@ -64,8 +67,7 @@ fn prepare_statement(line: &str, statement: &mut Statement) -> PrepareResult {
         match parsed {
             Ok(v) => {
                 statement.row_to_insert.id = v.0;
-                statement.row_to_insert.username = v.1.to_string();
-                statement.row_to_insert.email = v.2.to_string();
+                statement.row_to_insert.username = v.1.to_string(); statement.row_to_insert.email = v.2.to_string();
             },
             Err(_) => return PrepareResult::PrepareSyntaxError
         }
@@ -80,13 +82,21 @@ fn prepare_statement(line: &str, statement: &mut Statement) -> PrepareResult {
     return PrepareResult::PrepareUnrecognizedStatement
 }
 
+fn execute_insert(statement: &mut Statement, table: &mut Table) -> ExecuteResult {
+    if table.num_rows >= TABLE_MAX_ROWS {
+
+    }
+
+    return ExecuteResult::ExecuteSuccess;
+}
+
 fn execute_statement(statement: &mut Statement, table: &mut Table) -> ExecuteResult {
     match statement.statement_type {
         StatementType::StatementInsert => {
-            println!("This is where we would do an insert");
+            return execute_insert(statement, table);
         }
         StatementType::StatementSelect =>  {
-            println!("This is where we would do a select");
+            return execute_select(statement, table);
         }
     }
 }
@@ -98,7 +108,7 @@ fn print_prompt() {
 
 fn main() {
     let table = Table {
-        new_rows: 0,
+        num_rows: 0,
         pages: [0; TABLE_MAX_PAGES]
     };
 
