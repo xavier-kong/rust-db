@@ -1,4 +1,5 @@
 use std::io::{self, Write};
+use std::mem;
 
 #[allow(dead_code)]
 enum MetaCommandResult { MetaCommandSuccess, MetaCommandUnrecognizedCommand, Exit }
@@ -42,14 +43,31 @@ impl Default for Row {
     }
 }
 
-const PAGE_SIZE = 4096;
-const TABLE_MAX_PAGES: usize = 100;
-const ROWS_PER_PAGE: usize = PAGE_SIZE / ROW_SIZE;
-const TABLE_MAX_ROWS: usize = ROWS_PER_PAGE * TABLE_MAX_PAGES;
+// https://stackoverflow.com/a/70224634 
+fn get_size_of_return_type<F, T, U>(_f: F) -> usize
+where
+F: FnOnce(T) -> U
+{
+    std::mem::size_of::<U>()
+}
+
+const ID_SIZE: u32 = get_size_of_return_type(|s: Row | s.id);
+const USERNAME_SIZE: u32 = get_size_of_return_type(|s: Row | s.username);
+const EMAIL_SIZE: u32 = get_size_of_return_type(|s: Row | s.email);
+const ID_OFFSET: u32 = 0;
+
+const USERNAME_OFFSET: u32 = ID_OFFSET + ID_SIZE;
+const EMAIL_OFFSET: u32 = USERNAME_OFFSET + USERNAME_SIZE;
+const ROW_SIZE: u32 = ID_SIZE + USERNAME_SIZE + EMAIL_SIZE;
+
+const PAGE_SIZE: u32 = 4096;
+const TABLE_MAX_PAGES: u32 = 100;
+const ROWS_PER_PAGE: u32 = PAGE_SIZE / ROW_SIZE;
+const TABLE_MAX_ROWS: u32 = ROWS_PER_PAGE * TABLE_MAX_PAGES;
 
 struct Table {
     num_rows: u32,
-    pages: [usize; TABLE_MAX_PAGES]
+    pages: [u32; TABLE_MAX_PAGES]
 }
 
 fn do_meta_command(line: &str) -> MetaCommandResult {
@@ -84,8 +102,13 @@ fn prepare_statement(line: &str, statement: &mut Statement) -> PrepareResult {
 
 fn execute_insert(statement: &mut Statement, table: &mut Table) -> ExecuteResult {
     if table.num_rows >= TABLE_MAX_ROWS {
-
+        return ExecuteResult::ExecuteTableFull;
     }
+
+    let row_to_insert = &(statement.row_to_insert);
+
+    serialize_row(row_to_insert, row_slot(table, table.num_rows));
+    table.num_rows += 1;
 
     return ExecuteResult::ExecuteSuccess;
 }
