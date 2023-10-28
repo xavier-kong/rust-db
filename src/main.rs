@@ -64,10 +64,11 @@ const PAGE_SIZE: u32 = 4096;
 const TABLE_MAX_PAGES: u32 = 100;
 const ROWS_PER_PAGE: u32 = PAGE_SIZE / ROW_SIZE;
 const TABLE_MAX_ROWS: u32 = ROWS_PER_PAGE * TABLE_MAX_PAGES;
+const TABLE_MAX_PAGES_SIZE: usize = TABLE_MAX_PAGES as usize;
 
 struct Table {
     num_rows: u32,
-    pages: [u32; TABLE_MAX_PAGES]
+    pages: [u32; TABLE_MAX_PAGES_SIZE]
 }
 
 fn do_meta_command(line: &str) -> MetaCommandResult {
@@ -98,6 +99,10 @@ fn prepare_statement(line: &str, statement: &mut Statement) -> PrepareResult {
     }
 
     return PrepareResult::PrepareUnrecognizedStatement
+}
+
+fn serialize_row(row: &mut Row, destination: &[u32; TABLE_MAX_PAGES_SIZE]) {
+
 }
 
 fn execute_insert(statement: &mut Statement, table: &mut Table) -> ExecuteResult {
