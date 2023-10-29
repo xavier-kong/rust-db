@@ -101,8 +101,18 @@ fn prepare_statement(line: &str, statement: &mut Statement) -> PrepareResult {
     return PrepareResult::PrepareUnrecognizedStatement
 }
 
-fn serialize_row(row: &mut Row, destination: &[u32; TABLE_MAX_PAGES_SIZE]) {
+fn serialize_row(source: &mut Row, destination: &[u32; TABLE_MAX_PAGES_SIZE]) {
 
+
+    // bytes_buf[index*MAX_DATA_LENGTH..(index+1)*MAX_DATA_LENGTH-4].copy_from_slice(&buf[4..]);
+}
+
+fn row_slot(table: &mut Table, row_num: u32) -> u32 {
+    let page_num: u32 = row_num / ROWS_PER_PAGE;
+    let page = table.pages[page_num as usize];
+    let row_offset: u32 = row_num % ROWS_PER_PAGE;
+    let byte_offset: u32 = row_offset * ROW_SIZE;
+    return table.pages[page + byte_offset as usize];
 }
 
 fn execute_insert(statement: &mut Statement, table: &mut Table) -> ExecuteResult {
@@ -112,7 +122,7 @@ fn execute_insert(statement: &mut Statement, table: &mut Table) -> ExecuteResult
 
     let row_to_insert = &(statement.row_to_insert);
 
-    serialize_row(row_to_insert, row_slot(table, table.num_rows));
+    serialize_row(& mut row_to_insert, row_slot(table, table.num_rows));
     table.num_rows += 1;
 
     return ExecuteResult::ExecuteSuccess;
